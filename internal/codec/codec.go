@@ -150,6 +150,14 @@ func unmarshalV2(b []byte) (*filter.BloomFilter, error) {
 		return nil, ErrBitsTruncated
 	}
 
+	// Validate CRC32
+	payload := b[:bitsEnd]
+	stored := binary.BigEndian.Uint32(b[bitsEnd : bitsEnd+trailerV2])
+	computed := crc32.ChecksumIEEE(payload)
+	if stored != computed {
+		return nil, ErrCRCMismatch
+	}
+
 	bits := b[headerSizeV2:bitsEnd]
 	return filter.NewFromParts(m, k, bits)
 }
